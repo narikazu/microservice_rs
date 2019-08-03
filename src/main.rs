@@ -5,9 +5,12 @@ extern crate futures;
 extern crate log;
 extern crate env_logger;
 
+use hyper::{Chunk, StatusCode};
+use hyper::Method::{Get, Post};
 use hyper::server::{Request, Response, Service};
 
-use futures::future::Future;
+use crate::futures::Stream;
+use futures::future::{Future, FutureResult};
 
 struct Microservice;
 
@@ -17,8 +20,20 @@ impl Service for Microservice {
     type Error = hyper::Error;
     type Future = Box<Future<Item = Self::Response, Error = Self::Error>>;
     fn call(&self, request: Request) -> Self::Future {
-        info!("Microservice received a received: {:?}", request);
-        Box::new(futures::future::ok(Response::new()))
+        match (request.method(), request.path()) {
+            (&Post, "/") => {
+                let future = request
+                    .body()
+                    .concat2()
+                    .and_then(parse_form)
+                    .and_then(write_to_db)
+                    .then(make_post_response);
+                Box::new(future)
+            },
+            _ => Box::new(futures::future::ok(
+                Response::new().with_status(StatusCode::NotFound),
+            )),
+        }
     }
 }
 
