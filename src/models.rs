@@ -81,3 +81,19 @@ fn parse_query(query: &str) -> Result<TimeRange, String> {
         after: after.map(|a| a.unwrap()),
     })
 }
+
+fn make_get_response(
+    messages: Option<Vec<Message>>,
+) -> FutureResult<hyper::Response, hyper::Error> {
+    let response = match messages {
+        Some(messages) => {
+            let body = render_page(messages);
+            Response::new()
+                .with_header(ContentLength(body.len() as u64))
+                .with_body(body)
+        }
+        None => Response::new().with_status(StatusCode::InternalServerError),
+    };
+    debug!("{:?}", response);
+    futures::future::ok(response)
+}
