@@ -64,3 +64,20 @@ fn make_error_response(error_message: &str) -> FutureResult<hyper::Response, hyp
     debug!("{:?}", response);
     futures::future::ok(response)
 }
+
+fn parse_query(query: &str) -> Result<TimeRange, String> {
+    let args = url::form_urlencoded::parse(&query.as_bytes())
+        .into_owned()
+        .collect::<HashMap<String, String>>();
+    let before = args.get("before").map(|value| value.parse::<i64>());
+    if let Some(ref result) = before {
+        if let Err(ref error) = *result {
+            return Err(format!("Error paring 'before': {}", error));
+        }
+    }
+
+    Ok(TimeRange {
+        before: before.map(|b| b.unwrap()),
+        after: after.map(|a| a.unwrap()),
+    })
+}
