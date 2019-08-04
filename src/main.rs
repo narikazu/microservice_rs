@@ -30,6 +30,20 @@ impl Service for Microservice {
                     .then(make_post_response);
                 Box::new(future)
             },
+            (&Get, "/") => {
+                let time_range = match request.query() {
+                    Some(query) => parse_query(query),
+                    None => Ok(TimeRange {
+                        before: None,
+                        after: None,
+                    }),
+                };
+                let response = match time_range {
+                    Ok(time_range) => make_get_response(query_db(time_range)),
+                    Err(error) => make_error_response(&error),
+                };
+                Box::new(response)
+            }
             _ => Box::new(futures::future::ok(
                 Response::new().with_status(StatusCode::NotFound),
             )),
