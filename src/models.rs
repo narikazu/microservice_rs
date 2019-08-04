@@ -48,3 +48,14 @@ fn make_post_response(
         Err(error) => make_error_response(error.description()),
     }
 }
+
+fn make_error_response(error_message: &str) -> FutureResult<hyper::Response, hyper::Error> {
+    let payload = json!({"error": error_message}).to_string();
+    let response = Response::new()
+        .with_status(StatusCode::InternalServerError)
+        .with_header(ContentLength(payload.len() as u64))
+        .with_header(ContentType::json())
+        .with_body(payload);
+    debug!("{:?}", response);
+    futures::future::ok(response)
+}
