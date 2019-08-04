@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 use std::io;
 
+#[macro_use]
+extern crate serde_json;
+
 struct NewMessage {
     username: String,
     message: String,
@@ -32,5 +35,16 @@ fn write_to_db(entry: NewMessage) -> FutureResult<i64, hyper::Error> {
 fn make_post_response(
     result: Result<i64, hyper::Error>,
 ) -> FutureResult<hyper::Response, hyper::Error> {
-    futures::future::ok(Response::new().with_status(StatusCode::NotFound))
+    match result {
+        Ok(timestamp) => {
+            let payload = json!({"timestamp": timestamp}).to_string();
+            let response = Response::new()
+                .with_header(ContentLength(payload.len() as u64))
+                .with_header(ContentType::json())
+                .with_body(payload);
+                debug!("{:?}", response);
+                futures::future::ok(response)
+        },
+        Err(error) => make_error_response(error.description()),
+    }
 }
