@@ -97,3 +97,11 @@ fn make_get_response(
     debug!("{:?}", response);
     futures::future::ok(response)
 }
+
+#[derive(Queryable, Serialize, Debug)]
+pub struct Message {
+    pub id: i32,
+    pub username: String,
+    pub message: String,
+    pub timestamp: i64,
+}
