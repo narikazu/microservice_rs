@@ -1,8 +1,9 @@
 #![feature(proc_macro)]
-extern crate maud;
 
-extern crate hyper;
 extern crate futures;
+extern crate hyper;
+extern crate maud;
+extern crate url;
 
 #[macro_use]
 extern crate serde_json;
@@ -78,10 +79,18 @@ fn parse_query(query: &str) -> Result<TimeRange, String> {
     let args = url::form_urlencoded::parse(&query.as_bytes())
         .into_owned()
         .collect::<HashMap<String, String>>();
+
     let before = args.get("before").map(|value| value.parse::<i64>());
     if let Some(ref result) = before {
         if let Err(ref error) = *result {
             return Err(format!("Error paring 'before': {}", error));
+        }
+    }
+
+    let after = args.get("after").map(|value| value.parse::<i64>());
+    if let Some(ref result) = after {
+        if let Err(ref error) = *result {
+            return Err(format!("Error paring 'after': {}", error));
         }
     }
 
