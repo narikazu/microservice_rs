@@ -1,4 +1,4 @@
-talbe! {
+table! {
     messages (id) {
         id -> Int4,
         username -> Varchar,

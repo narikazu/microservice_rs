@@ -3,8 +3,8 @@ use crate::schema::messages;
 #[derive(Insertable, Debug)]
 #[table_name = "messages"]
 pub struct NewMessage {
-    username: String,
-    message: String,
+    pub username: String,
+    pub message: String,
 }
 
 #[derive(Queryable, Serialize, Debug)]
