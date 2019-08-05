@@ -4,7 +4,9 @@ use std::io;
 #[macro_use]
 extern crate serde_json;
 
-struct NewMessage {
+#[derive(Insertable, Debug)]
+#[table_name = "messages"]
+pub struct NewMessage {
     username: String,
     message: String,
 }
