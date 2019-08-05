@@ -14,10 +14,15 @@ use hyper::{Chunk, StatusCode};
 use hyper::Method::{Get, Post};
 use hyper::server::{Request, Response, Service};
 
+use std::env;
+const DEFAULT_DATABASE_URL: &'static str = "postgresql://postgres@localhost:5432";
+
 use crate::futures::Stream;
 use futures::future::{Future, FutureResult};
 mod schema;
 mod models;
+
+use models::{Message, NewMessage};
 
 struct Microservice;
 
@@ -40,19 +45,37 @@ fn write_to_db(new_message: NewMessage,
     }
 }
 
+fn connect_to_db() -> Option<PgConnection> {
+    let database_url = env::var("DATABASE_URL").unwrap_or(String::from(DEFAULT_DATABASE_URL));
+    match PgConnection::establish(&database_url) {
+        Ok(connection) => Some(connection),
+        Err(error) => {
+            error!("Error connecting to database: {}", error.description())
+        },
+    }
+}
+
 impl Service for Microservice {
     type Request = Request;
     type Response = Response;
     type Error = hyper::Error;
     type Future = Box<Future<Item = Self::Response, Error = Self::Error>>;
     fn call(&self, request: Request) -> Self::Future {
+        let db_connection = match connect_to_db() {
+            Some(connection) => connection,
+            None => {
+                return Box::new(futures::future::ok(
+                    Response::new().with_status(StatusCode::InternalServerError),
+                ))
+            }
+        };
         match (request.method(), request.path()) {
             (&Post, "/") => {
                 let future = request
                     .body()
                     .concat2()
                     .and_then(parse_form)
-                    .and_then(write_to_db)
+                    .and_then(move |new_message| write_to_db(new_message, &db_connection))
                     .then(make_post_response);
                 Box::new(future)
             },
@@ -65,7 +88,7 @@ impl Service for Microservice {
                     }),
                 };
                 let response = match time_range {
-                    Ok(time_range) => make_get_response(query_db(time_range)),
+                    Ok(time_range) => make_get_response(query_db(time_range, &db_connection)),
                     Err(error) => make_error_response(&error),
                 };
                 Box::new(response)
