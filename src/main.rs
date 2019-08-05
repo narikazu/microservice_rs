@@ -4,6 +4,11 @@ extern crate futures;
 #[macro_use]
 extern crate log;
 extern crate env_logger;
+extern crate serde_derive;
+extern crate diesel;
+
+use diesel::prelude::*;
+use diesel::pg::PgConnection;
 
 use hyper::{Chunk, StatusCode};
 use hyper::Method::{Get, Post};
@@ -11,8 +16,29 @@ use hyper::server::{Request, Response, Service};
 
 use crate::futures::Stream;
 use futures::future::{Future, FutureResult};
+mod schema;
+mod models;
 
 struct Microservice;
+
+fn write_to_db(new_message: NewMessage,
+    db_connection: &PgConnection,
+) -> FutureResult<i64, hyper::Error> {
+    use schema::messages;
+    let timestamp = diesel::insert_into(messages::table)
+        .values(&new_message)
+        .returning(messages::timestamp)
+        .get_result(db_connection);
+    match timestamp {
+        Ok(timestamp) => futures::future::ok(timestamp),
+        Err(error) => {
+            error!("Error writing to database: {}", error.description());
+            futures::future::err(hyper::Error::from(
+                io::Error::new(io::ErrorKind::Other, "server error"),
+            ))
+        }
+    }
+}
 
 impl Service for Microservice {
     type Request = Request;
