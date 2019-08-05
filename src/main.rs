@@ -55,6 +55,37 @@ fn connect_to_db() -> Option<PgConnection> {
     }
 }
 
+fn query_db(time_range: TimeRange, db_connection: &PgConnection) -> Option<Vec<Message>> {
+    use schema::messages;
+    let TimeRange { before, after } = time_range;
+    let query_result = match (before, after) {
+        (Some(before), Some(after)) => {
+            messages::table
+                .filter(messages::timestamp.lt(before as i64))
+                .filter(messages::timestamp.gt(after as i64))
+                .load::<Message>(db_connection)
+        }
+        (Some(before), _) => {
+            messages::table
+                .filter(messages::timestamp.lt(before as i64))
+                .load::<Message>(db_connection)
+        }
+        (_, Some(after)) => {
+            messages::table
+                .filter(messages::timestamp.gt(after as i64))
+                .load::<Message>(db_connection)
+        }
+        _ => messages::table.load::<Message>(db_connection),
+    };
+    match query_result {
+        Ok(result) => Some(result),
+        Err(error) => {
+            error!("Error querying DB: {}", error);
+            None
+        },
+    }
+}
+
 impl Service for Microservice {
     type Request = Request;
     type Response = Response;
