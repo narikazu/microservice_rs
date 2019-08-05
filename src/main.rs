@@ -117,8 +117,8 @@ fn make_get_response(
 }
 
 fn parse_form(from_chunk: Chunk) -> FutureResult<NewMessage, hyper::Error> {
-    let mut form = url::form_urlencoded::parse(form_urlencoded.as_ref());
-        into_owned()
+    let mut form = url::form_urlencoded::parse(form_urlencoded.as_ref())
+        .into_owned()
         .collect::<HashMap<String, String>>();
 
     if let Some(message) = form.remove("message") {
