@@ -13,14 +13,16 @@ extern crate diesel;
 use diesel::prelude::*;
 use diesel::pg::PgConnection;
 
+use std::collections::HashMap;
 use std::error::Error;
+use std::env;
+use std::io;
 
 use hyper::{Chunk, StatusCode};
 use hyper::Method::{Get, Post};
 use hyper::server::{Request, Response, Service};
 use hyper::header::{ContentLength, ContentType};
 
-use std::env;
 const DEFAULT_DATABASE_URL: &'static str = "postgresql://postgres@localhost:5432";
 
 use crate::futures::Stream;
