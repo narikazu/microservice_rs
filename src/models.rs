@@ -1,4 +1,4 @@
-use schema::messages;
+use crate::schema::messages;
 
 #[derive(Insertable, Debug)]
 #[table_name = "messages"]

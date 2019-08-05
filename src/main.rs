@@ -117,7 +117,7 @@ fn make_get_response(
 }
 
 fn parse_form(from_chunk: Chunk) -> FutureResult<NewMessage, hyper::Error> {
-    let mut form = url::form_urlencoded::parse(form_urlencoded.as_ref())
+    let mut form = url::form_urlencoded::parse(from_chunk.as_ref())
         .into_owned()
         .collect::<HashMap<String, String>>();
 
@@ -177,7 +177,8 @@ fn connect_to_db() -> Option<PgConnection> {
     match PgConnection::establish(&database_url) {
         Ok(connection) => Some(connection),
         Err(error) => {
-            error!("Error connecting to database: {}", error.description())
+            error!("Error connecting to database: {}", error.description());
+            None
         },
     }
 }
