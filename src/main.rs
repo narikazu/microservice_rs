@@ -1,3 +1,6 @@
+#![feature(proc_macro)]
+extern crate maud;
+
 extern crate hyper;
 extern crate futures;
 
@@ -25,6 +28,24 @@ mod models;
 use models::{Message, NewMessage};
 
 struct Microservice;
+
+fn render_page(messages: Vec<Message>) -> String {
+    (html! {
+        head {
+            title "microservice"
+            style "body { font-family: monospace }"
+        }
+        body {
+            ul {
+                @for message in &messages {
+                    li {
+                        (message.username) " (" (message.timestamp) "): " (message.message)
+                    }
+                }
+            }
+        }
+    }).into_string()
+}
 
 fn write_to_db(new_message: NewMessage,
     db_connection: &PgConnection,
