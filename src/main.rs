@@ -1,4 +1,4 @@
-#![feature(proc_macro)]
+#![feature(proc_macro_hygiene)]
 
 extern crate futures;
 extern crate hyper;
@@ -20,6 +20,8 @@ extern crate diesel;
 
 use diesel::prelude::*;
 use diesel::pg::PgConnection;
+
+use maud::html;
 
 use std::collections::HashMap;
 use std::error::Error;
@@ -138,8 +140,8 @@ fn parse_form(from_chunk: Chunk) -> FutureResult<NewMessage, hyper::Error> {
 fn render_page(messages: Vec<Message>) -> String {
     (html! {
         head {
-            title "microservice"
-            style "body { font-family: monospace }"
+            title { "microservice" }
+            style { "body { font-family: monospace }" }
         }
         body {
             ul {
